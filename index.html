@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dragon - Bloxd World Code</title>
+<style>
+:root{--bg:#14110f;--card:#1f1a17;--text:#f1e9e2;--muted:#a79a90;--accent:#ff8a1f;--line:#3a312b;--code:#0e0c0b}
+@media (prefers-color-scheme:light){:root{--bg:#faf6f2;--card:#fff;--text:#231c17;--muted:#6f625a;--accent:#d9660a;--line:#e6dcd3;--code:#f3ede7}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:28px 16px 60px}
+h1{margin:0 0 4px;font-size:30px}h1 span{color:var(--accent)}
+h2{margin:0 0 12px;font-size:20px}
+.sub{color:var(--muted);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+ol,ul{margin:0;padding-left:22px}li{margin:4px 0}
+code{background:var(--code);padding:2px 6px;border-radius:6px;font-family:ui-monospace,Consolas,monospace;font-size:.9em}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.85em}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer}
+button:active{transform:scale(.97)}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:14px;max-height:480px;overflow:auto;font:13px/1.45 ui-monospace,Consolas,monospace;white-space:pre}
+.note{color:var(--muted);font-size:.92em}
+</style>
+</head>
+<body>
+<main>
+<h1>Dragon <span>for Bloxd</span></h1>
+<p class="sub">A flying dragon boss for World Code: it circles in orbit, lands in the center, bites, heals from crystals and leaves an egg when killed.</p>
+
+<div class="card">
+<h2>How to install</h2>
+<ol>
+<li>Open your world in Bloxd and go to the <b>World Code</b> editor (world owner only).</li>
+<li>Click "Copy code" below and paste the whole script into the editor (delete any old code first).</li>
+<li>Save. Stand where you want the center of the orbit and type <code>!dragon</code> in chat.</li>
+</ol>
+<p class="note" style="margin-top:10px">The script is about 11,500 characters, well under the 16,000 character World Code limit.</p>
+</div>
+
+<div class="card">
+<h2>Commands</h2>
+<div class="tw"><table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>!dragon</code></td><td>Spawns the dragon. The orbit center is where you stand; it flies 8 blocks above you.</td></tr>
+<tr><td><code>!dragonkill</code></td><td>Removes the dragon with no reward and no egg.</td></tr>
+</table></div>
+<p class="note" style="margin-top:10px">Commands start with "!" because "/" does not work for chat scripts.</p>
+</div>
+
+<div class="card">
+<h2>How it behaves</h2>
+<ul>
+<li><b>Orbit:</b> circles at a constant height around the center, radius 20 blocks.</li>
+<li><b>Bite:</b> bites and knocks back anyone who gets close (12 damage). Creative players take no damage but still get knocked back.</li>
+<li><b>Landing:</b> every 30-60 seconds it lands in the center, a shockwave knocks back nearby players (4 damage), it rests for 6-9 seconds, then takes off. This is the best time to hit it.</li>
+<li><b>Fighting:</b> left-click while looking at it (up to 12 blocks away). Hands and items deal 5 damage, swords deal 10. It has 150 HP and a health bar is shown in chat.</li>
+<li><b>Healing:</b> while at least one Crystal block is within 50 blocks, the dragon heals 40 HP per second. Break the crystals first.</li>
+<li><b>Crystals:</b> breaking one makes an explosion with a sound, knocks back nearby players and deals 1 damage.</li>
+<li><b>Death:</b> the dragon falls and disappears, leaves an egg made of blocks, and the killer receives 500 Aura XP Orbs.</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Settings (constants at the top of the code)</h2>
+<div class="tw"><table>
+<tr><th>Constant</th><th>What it changes</th></tr>
+<tr><td><code>ORBIT_RADIUS</code>, <code>ORBIT_HEIGHT</code>, <code>ORBIT_SPEED</code></td><td>Orbit radius, flight height above the spawn point, flight speed.</td></tr>
+<tr><td><code>ORBIT_DIR</code></td><td>Circling direction: 1 or -1.</td></tr>
+<tr><td><code>ROT_SIGN</code></td><td>If the dragon flies sideways or tail-first, set it to -1.</td></tr>
+<tr><td><code>LAND_MIN</code>, <code>LAND_MAX</code></td><td>How often it lands, in ticks (30 ticks = 1 second).</td></tr>
+<tr><td><code>GROUND_MIN</code>, <code>GROUND_MAX</code></td><td>How long it rests on the ground, in ticks.</td></tr>
+<tr><td><code>BITE_DAMAGE</code>, <code>BITE_RANGE</code></td><td>Bite damage and distance.</td></tr>
+<tr><td><code>MAX_HP</code></td><td>Dragon health.</td></tr>
+<tr><td><code>HIT_DAMAGE</code>, <code>SWORD_DAMAGE</code>, <code>HIT_REACH</code></td><td>Damage per hit and hit distance.</td></tr>
+<tr><td><code>HEAL_AMOUNT</code>, <code>HEAL_SECONDS</code>, <code>HEAL_RANGE</code></td><td>How much HP it heals, over how many seconds, and the radius it searches for crystals.</td></tr>
+<tr><td><code>CRYSTAL</code></td><td>A word that must appear in the crystal block name.</td></tr>
+<tr><td><code>ORB_ITEM</code>, <code>ORB_AMOUNT</code></td><td>Reward item and amount given to the killer.</td></tr>
+<tr><td><code>EGG_BLOCKS</code></td><td>Block used for the egg (the first one in the list that can actually be placed).</td></tr>
+</table></div>
+</div>
+
+<div class="card">
+<h2>Troubleshooting</h2>
+<ul>
+<li><b>Dragon does not heal:</b> make sure the block name contains the word from <code>CRYSTAL</code>. Crystals are found automatically after spawning, which takes about 10 seconds.</li>
+<li><b>No reward received:</b> make sure you have inventory space: it is 8 slots of orbs.</li>
+<li><b>Cannot hit the dragon:</b> get within 12 blocks and aim at it, hits use your line of sight.</li>
+<li><b>Errors in chat:</b> the script prints "Dragon error: ..." so the problem can be traced.</li>
+</ul>
+</div>
+
+<div class="card">
+<div class="bar">
+<h2 style="margin:0">World Code script</h2>
+<button id="copy" type="button">Copy code</button>
+</div>
+<pre id="code">const PARTS = [
+  [{blockName:&quot;Black Concrete&quot;,size:[3.25,0.5,1.5]},[0.5,0,0],[0,0,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[1.25,0.5,2]},[1.25,0,-2],[0,0,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[1.25,0.5,2]},[1.25,0,2],[0,0,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[0.75,0.5,2.5]},[-2.5,0,0],[0,-1.5708,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[0.75,1,0.75]},[2.625,0,0],[0,-1.5708,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[0.75,0.25,0.75]},[3.375,0.5,0],[0,-1.5708,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Black Concrete&quot;,size:[0.75,0.25,0.75]},[3.375,0,0],[0,-1.5708,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Obsidian&quot;,size:[1,0.25,0.75]},[3.25,0.25,0],[0,0,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Block of Quartz&quot;,size:[0.02,0.25,0.25]},[3.01,0.75,-0.25],[0,0,0],&quot;BloxdBlock&quot;],
+  [{blockName:&quot;Block of Quartz&quot;,size:[0.02,0.25,0.25]},[3.01,0.75,0.25],[0,0,0],&quot;BloxdBlock&quot;],
+];
+
+const ORBIT_RADIUS = 20, ORBIT_HEIGHT = 8, ORBIT_SPEED = 0.3;
+const ORBIT_DIR = 1;
+const ROT_SIGN = 1;
+
+const LAND_MIN = 900, LAND_MAX = 1800;
+const LAND_TICKS = 100, TAKEOFF_TICKS = 90;
+const GROUND_MIN = 180, GROUND_MAX = 270;
+const SHOCK_RADIUS = 8, SHOCK_DAMAGE = 4, SHOCK_KNOCK = 14;
+
+const BITE_RANGE = 6, BITE_DAMAGE = 12, BITE_COOLDOWN = 20, KNOCK_H = 18, KNOCK_V = 12;
+
+const MAX_HP = 150, HIT_DAMAGE = 5, SWORD_DAMAGE = 10;
+const HIT_REACH = 12, HIT_RADIUS = 3.5, HIT_COOLDOWN = 6;
+const ORB_ITEM = &quot;Aura XP Orb&quot;, ORB_AMOUNT = 500;
+const EGG_BLOCKS = [&quot;Glowing Mushroom&quot;, &quot;Glowstone&quot;, &quot;Block of Quartz&quot;];
+
+const CRYSTAL = &quot;Crystal&quot;;
+const HEAL_RANGE = 50;
+const HEAL_AMOUNT = 40, HEAL_SECONDS = 1;
+const HEAL_STEP = HEAL_AMOUNT / (HEAL_SECONDS * 3);
+const BLAST_RADIUS = 5, BLAST_DAMAGE = 1, BLAST_KNOCK = 10, BLAST_SOUND = &quot;explode&quot;;
+const SCAN_BUDGET = 3000;
+
+let dragon = null, scan = null;
+const crystals = {};
+
+function hurt(pid, amount) {
+  try {
+    if (api.getHealth(pid) == null) return false;
+    api.applyHealthChange(pid, -amount);
+    return true;
+  } catch (e) { return false; }
+}
+function knock(pid, x, y, z) { try { api.applyImpulse(pid, x, y, z); } catch (e) {} }
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function ease(t) { return t * t * (3 - 2 * t); }
+function lerpAngle(a, b, t) {
+  let d = b - a;
+  while (d &gt; Math.PI) d -= Math.PI * 2;
+  while (d &lt; -Math.PI) d += Math.PI * 2;
+  return a + d * t;
+}
+
+function blockAt(x, y, z) {
+  let b;
+  try { b = api.getBlock(x, y, z); } catch (e) {}
+  if (typeof b !== &quot;string&quot;) { try { b = api.getBlock([x, y, z]); } catch (e) {} }
+  return b;
+}
+function isCrystal(name) { return typeof name === &quot;string&quot; &amp;&amp; name.indexOf(CRYSTAL) !== -1; }
+function groundAt(x, y, z, fb) {
+  const bx = Math.floor(x), bz = Math.floor(z);
+  for (let yy = Math.floor(y); yy &gt; y - 80; yy--) if (api.getBlockSolidity(bx, yy, bz)) return yy + 1;
+  return fb;
+}
+
+function giveReward(pid) {
+  try {
+    for (let left = ORB_AMOUNT; left &gt; 0; left -= 64) api.giveItem(pid, ORB_ITEM, Math.min(64, left));
+    api.sendMessage(pid, &quot;Reward: &quot; + ORB_AMOUNT + &quot; x &quot; + ORB_ITEM);
+  } catch (e) { api.sendMessage(pid, &quot;Could not give item &quot; + ORB_ITEM); }
+}
+
+function placeEgg(d) {
+  const bx = Math.floor(d.x), bz = Math.floor(d.z), by = Math.floor(d.ground);
+  let name = null;
+  for (const n of EGG_BLOCKS) {
+    try { api.setBlock(bx, by, bz, n); if (blockAt(bx, by, bz) === n) { name = n; break; } } catch (e) {}
+  }
+  if (!name) return null;
+  for (let dy = 0; dy &lt;= 5; dy++) {
+    const w = 2 + (2.5 - dy) * 0.2, h = (dy - 2.5) / 3;
+    for (let dx = -3; dx &lt;= 3; dx++) for (let dz = -3; dz &lt;= 3; dz++) {
+      if ((dx * dx + dz * dz) / (w * w) + h * h &lt;= 1) { try { api.setBlock(bx + dx, by + dy, bz + dz, name); } catch (e) {} }
+    }
+  }
+  return name;
+}
+
+function spawnDragon(pos) {
+  const ids = [];
+  for (const [opts, , , type] of PARTS) {
+    const id = api.attemptCreateMeshEntity(type, opts);
+    if (id == null) { for (const i of ids) api.deleteMeshEntity(i); return null; }
+    ids.push(id);
+  }
+  const d = { ids, cx: pos[0], cy: pos[1] + ORBIT_HEIGHT, cz: pos[2], a: 0, x: 0, y: 0, z: 0,
+              yaw: 0, age: 0, bite: 0, hp: MAX_HP, hitCd: 0, dying: 0, killer: null, ground: pos[1],
+              st: 0, t: 0, nextLand: rnd(LAND_MIN, LAND_MAX) };
+  place(d);
+  const W = HEAL_RANGE * 2 + 1;
+  scan = { x0: Math.floor(pos[0]) - HEAL_RANGE, z0: Math.floor(pos[2]) - HEAL_RANGE,
+           y0: Math.floor(pos[1]) - 30, W, H: 61, i: 0, total: W * W * 61 };
+  return d;
+}
+
+function orbitXZ(d, a) { return [d.cx + Math.cos(a) * ORBIT_RADIUS, d.cz + Math.sin(a) * ORBIT_RADIUS]; }
+function tangentYaw(a) { return Math.atan2(-Math.cos(a) * ORBIT_DIR, -Math.sin(a) * ORBIT_DIR); }
+
+function place(d) {
+  const p = orbitXZ(d, d.a);
+  d.x = p[0]; d.z = p[1];
+  d.y = d.cy + Math.sin(d.age * 0.1) * 0.3;
+  d.yaw = tangentYaw(d.a);
+}
+
+function startLanding(d) {
+  d.gy = groundAt(d.cx, d.cy, d.cz, d.ground) + 0.6;
+  d.sx = d.x; d.sy = d.y; d.sz = d.z; d.syaw = d.yaw;
+  d.tyaw = Math.atan2(-(d.cz - d.z), d.cx - d.x);
+  d.st = 1; d.t = 0;
+}
+
+function shockwave(d) {
+  try { api.broadcastSound(BLAST_SOUND, 1, 1, { x: d.cx, y: d.gy, z: d.cz }); } catch (e) {}
+  for (const pid of api.getPlayerIds()) {
+    const p = api.getPosition(pid);
+    if (!p) continue;
+    const dx = p[0] - d.cx, dz = p[2] - d.cz, dist = Math.hypot(dx, p[1] - d.gy, dz);
+    if (dist &gt; SHOCK_RADIUS) continue;
+    const k = SHOCK_KNOCK / Math.max(dist, 1);
+    hurt(pid, SHOCK_DAMAGE);
+    knock(pid, dx * k, 8, dz * k);
+  }
+}
+
+function flyStep(d) {
+  d.t++;
+  if (d.st === 1) {
+    const u = ease(Math.min(1, d.t / LAND_TICKS));
+    d.x = d.sx + (d.cx - d.sx) * u; d.z = d.sz + (d.cz - d.sz) * u; d.y = d.sy + (d.gy - d.sy) * u;
+    d.yaw = lerpAngle(d.syaw, d.tyaw, Math.min(1, d.t / 30));
+    if (d.t &gt;= LAND_TICKS) { d.st = 2; d.t = rnd(GROUND_MIN, GROUND_MAX); d.gyaw = d.yaw; shockwave(d); }
+  } else {
+    const e = orbitXZ(d, d.a), u = ease(Math.min(1, d.t / TAKEOFF_TICKS));
+    d.x = d.cx + (e[0] - d.cx) * u; d.z = d.cz + (e[1] - d.cz) * u; d.y = d.gy + (d.cy - d.gy) * u;
+    const trav = Math.atan2(-(e[1] - d.cz), e[0] - d.cx);
+    const y1 = lerpAngle(d.gyaw, trav, Math.min(1, d.t / 30));
+    d.yaw = lerpAngle(y1, tangentYaw(d.a), Math.max(0, (d.t / TAKEOFF_TICKS - 0.6) / 0.4));
+    if (d.t &gt;= TAKEOFF_TICKS) { d.st = 0; d.nextLand = rnd(LAND_MIN, LAND_MAX); place(d); }
+  }
+}
+
+function move(d) {
+  if (d.bite &gt; 0) d.bite--;
+  if (d.hitCd &gt; 0) d.hitCd--;
+  if (d.st === 0) {
+    d.a += ORBIT_DIR * ORBIT_SPEED / ORBIT_RADIUS;
+    place(d);
+    if (--d.nextLand &lt;= 0) startLanding(d);
+  } else if (d.st === 2) {
+    if (--d.t &lt;= 0) { d.st = 3; d.t = 0; }
+  } else flyStep(d);
+
+  if (d.bite &gt; 0 || d.age % 3 !== 0) return;
+  for (const pid of api.getPlayerIds()) {
+    const p = api.getPosition(pid);
+    if (p &amp;&amp; Math.hypot(p[0] - d.x, p[1] - d.y, p[2] - d.z) &lt; BITE_RANGE) {
+      hurt(pid, BITE_DAMAGE);
+      knock(pid, Math.cos(d.yaw) * KNOCK_H, KNOCK_V, -Math.sin(d.yaw) * KNOCK_H);
+      d.bite = BITE_COOLDOWN;
+      break;
+    }
+  }
+}
+
+function render(d) {
+  const c = Math.cos(d.yaw), s = Math.sin(d.yaw);
+  const flap = d.st === 2 ? Math.sin(d.age * 0.06) * 0.1 : Math.sin(d.age * (d.dying ? 0.1 : 0.25));
+  for (let i = 0; i &lt; PARTS.length; i++) {
+    const [, p, r] = PARTS[i];
+    let py = p[1], pz = p[2];
+    if (i === 1 || i === 2) py += flap * 0.9;
+    else if (i === 3) pz += Math.sin(d.age * 0.15) * 0.3;
+    api.setPosition(d.ids[i], d.x + p[0] * c + pz * s, d.y + py, d.z - p[0] * s + pz * c);
+    api.setEntityRotation(d.ids[i], r[0], r[1] + d.yaw * ROT_SIGN, r[2]);
+  }
+}
+
+function removeDragon() {
+  for (const id of dragon.ids) api.deleteMeshEntity(id);
+  dragon = null; scan = null;
+}
+
+function dieStep(d) {
+  d.yaw += 0.4;
+  d.y = Math.max(d.ground + 0.5, d.y - 0.5);
+  render(d);
+  if (--d.dying &lt;= 0) {
+    const egg = placeEgg(d);
+    api.broadcastMessage(&quot;Dragon defeated!&quot; + (egg ? &quot; It left an egg (&quot; + egg + &quot;).&quot; : &quot;&quot;));
+    if (d.killer) giveReward(d.killer);
+    removeDragon();
+  }
+}
+
+function heal(d) {
+  if (d.hp &gt;= MAX_HP) return;
+  const r2 = HEAL_RANGE * HEAL_RANGE;
+  for (const key in crystals) {
+    const c = crystals[key];
+    const dx = c[0] - d.x, dy = c[1] - d.y, dz = c[2] - d.z;
+    if (dx * dx + dy * dy + dz * dz &gt; r2) continue;
+    const b = blockAt(c[0], c[1], c[2]);
+    if (typeof b === &quot;string&quot; &amp;&amp; !isCrystal(b)) { delete crystals[key]; continue; }
+    d.hp = Math.min(MAX_HP, d.hp + HEAL_STEP);
+    return;
+  }
+}
+
+function scanStep() {
+  const s = scan;
+  for (let n = 0; n &lt; SCAN_BUDGET &amp;&amp; s.i &lt; s.total; n++) {
+    const i = s.i++, y = s.y0 + (i % s.H), r = (i / s.H) | 0;
+    const x = s.x0 + (r % s.W), z = s.z0 + ((r / s.W) | 0);
+    if (isCrystal(blockAt(x, y, z))) crystals[x + &quot;,&quot; + y + &quot;,&quot; + z] = [x, y, z];
+  }
+  if (s.i &gt;= s.total) scan = null;
+}
+
+tick = () =&gt; {
+  if (scan) { try { scanStep(); } catch (e) { scan = null; } }
+  if (!dragon) return;
+  dragon.age++;
+  try {
+    if (dragon.dying &gt; 0) { dieStep(dragon); return; }
+    if (dragon.age % 10 === 0) heal(dragon);
+    move(dragon);
+    if (dragon.age % 2 === 0) render(dragon);
+  } catch (e) { api.broadcastMessage(&quot;Dragon error: &quot; + String(e &amp;&amp; e.message || e)); }
+};
+
+onPlayerClick = (playerId, wasAltClick) =&gt; {
+  const d = dragon;
+  if (!d || d.dying &gt; 0 || wasAltClick || d.hitCd &gt; 0) return;
+  try {
+    const pos = api.getPosition(playerId), dir = api.getPlayerFacingInfo(playerId).dir;
+    if (!pos || !dir) return;
+    const vx = d.x - pos[0], vy = d.y - (pos[1] + 1.6), vz = d.z - pos[2];
+    const t = vx * dir[0] + vy * dir[1] + vz * dir[2];
+    if (t &lt; 0 || t &gt; HIT_REACH + HIT_RADIUS) return;
+    if (Math.hypot(vx - dir[0] * t, vy - dir[1] * t, vz - dir[2] * t) &gt; HIT_RADIUS) return;
+
+    let dmg = HIT_DAMAGE;
+    try {
+      const held = api.getHeldItem(playerId);
+      if (held &amp;&amp; String(held.name).indexOf(&quot;Sword&quot;) !== -1) dmg = SWORD_DAMAGE;
+    } catch (e) {}
+    d.hp -= dmg; d.hitCd = HIT_COOLDOWN;
+    if (d.hp &lt;= 0) { d.dying = 60; d.killer = playerId; d.ground = groundAt(d.x, d.y, d.z, d.ground); return; }
+    const hp = Math.round(d.hp), f = Math.max(0, Math.round(d.hp / MAX_HP * 10));
+    api.sendMessage(playerId, &quot;Dragon: &quot; + &quot;█&quot;.repeat(f) + &quot;░&quot;.repeat(10 - f) + &quot; &quot; + hp + &quot;/&quot; + MAX_HP);
+  } catch (e) {}
+};
+
+onPlayerChangeBlock = (playerId, x, y, z, fromBlock, toBlock) =&gt; {
+  try {
+    if (isCrystal(toBlock)) { crystals[x + &quot;,&quot; + y + &quot;,&quot; + z] = [x, y, z]; return; }
+    if (!isCrystal(fromBlock)) return;
+    delete crystals[x + &quot;,&quot; + y + &quot;,&quot; + z];
+    try { api.broadcastSound(BLAST_SOUND, 1, 1, { x: x + 0.5, y: y + 0.5, z: z + 0.5 }); } catch (e) {}
+    for (const pid of api.getPlayerIds()) {
+      const p = api.getPosition(pid);
+      if (!p) continue;
+      const dx = p[0] - (x + 0.5), dy = p[1] - (y + 0.5), dz = p[2] - (z + 0.5);
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist &gt; BLAST_RADIUS) continue;
+      const k = BLAST_KNOCK / Math.max(dist, 1);
+      hurt(pid, BLAST_DAMAGE);
+      knock(pid, dx * k, 4 + k, dz * k);
+    }
+  } catch (e) {}
+};
+
+onPlayerChat = (playerId, msg) =&gt; {
+  if (msg === &quot;!dragon&quot;) {
+    if (dragon) { api.sendMessage(playerId, &quot;The dragon already exists.&quot;); return false; }
+    dragon = spawnDragon(api.getPosition(playerId));
+    api.sendMessage(playerId, dragon ? &quot;The dragon is circling this place!&quot; : &quot;Mesh limit reached, delete some.&quot;);
+    return false;
+  }
+  if (msg === &quot;!dragonkill&quot; &amp;&amp; dragon) {
+    removeDragon();
+    api.sendMessage(playerId, &quot;Dragon removed.&quot;);
+    return false;
+  }
+};
+</pre>
+</div>
+</main>
+<script>
+(function(){
+var btn=document.getElementById("copy"),pre=document.getElementById("code");
+function done(ok){btn.textContent=ok?"Copied!":"Failed, select the code manually";setTimeout(function(){btn.textContent="Copy code"},2000)}
+function fallback(){
+var r=document.createRange();r.selectNodeContents(pre);
+var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+var ok=false;try{ok=document.execCommand("copy")}catch(e){}
+s.removeAllRanges();done(ok)
+}
+btn.addEventListener("click",function(){
+var text=pre.textContent;
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(text).then(function(){done(true)},fallback)
+}else fallback()
+});
+})();
+</script>
+</body>
+</html>
